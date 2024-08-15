@@ -1,8 +1,9 @@
 from pydantic import BaseModel
 from typing import List
+from typing_extensions import TypedDict
 
 
-class MarkingScheme(BaseModel):
+class MarkingScheme(TypedDict):
     name: str
     nClasses: int
     nAssoc: int

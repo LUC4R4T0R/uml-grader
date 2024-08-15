@@ -1,9 +1,10 @@
 from pydantic import BaseModel
-from typing import Dict, List
+from typing import List
 from models.Submission import Submission
 from models.MarkingScheme import MarkingScheme
 
 
 class GradingRequest(BaseModel):
-    markingScheme: MarkingScheme
+    marking_scheme: MarkingScheme
+    mod_solution: str
     submissions: List[Submission]
