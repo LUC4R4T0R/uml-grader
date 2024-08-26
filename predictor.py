@@ -49,6 +49,8 @@ probas = {}
 
 aucs = {}
 
+data = []
+
 def get_data_from_csv():
     result = []
     with open(CSV_FILE) as csvfile:
@@ -59,32 +61,30 @@ def get_data_from_csv():
     return np.array(result)
 
 
-data = get_data_from_csv()  # labeled submissions
-
 
 def train_model(model, x_train, y_train):
     """
     Train given model to find the relationship y = f(x) and return that model.
     """
-    model.fit(np.array(x_train).astype(np.float),
-              np.array(y_train).astype(np.float))
+    model.fit(np.array(x_train).astype(float),
+              np.array(y_train).astype(float))
     return model
 
 
 def evaluate(model, x_test, y_test, data_name: str):
     """
-    Evaluate trained model on test set. y_test is the expected outcome. 
+    Evaluate trained model on test set. y_test is the expected outcome.
     """
     global expected
     global predicted
     global output
     global probas
 
-    x_test = np.array(x_test).astype(np.float)
-    y_test = np.array(y_test).astype(np.float)
+    x_test = np.array(x_test).astype(float)
+    y_test = np.array(y_test).astype(float)
     pred = model.predict(x_test)
     acc = accuracy_score(y_test, pred)
-    # print(f"Expected: {y_test}\nActual:   {pred}\nAccuracy: {acc}\n")
+    print(f"Expected: {y_test}\nActual:   {pred}\nAccuracy: {acc}\n")
 
     expected.extend(y_test)
     predicted.extend(pred)
@@ -128,8 +128,9 @@ def evaluate_all(training_data, test_data):
     for clf in classifiers:
         model = train_model(clf, x_train, y_train)
         evaluate(model, x_test, y_test, "heuristic")
-        
+
     # Predict label given touchcore
+    '''
     x_train = []
     y_train = []
     for e in training_data:
@@ -164,11 +165,14 @@ def evaluate_all(training_data, test_data):
     for clf in classifiers:
         model = train_model(clf, x_train, y_train)
         evaluate(model, x_test, y_test, "heuristicAndTouchcore")
+    '''
 
 
 def k_fold():
     kf = KFold(n_splits=K)
+    print(data)
     for train, test in kf.split(data):
+        print(train, test)
         # use data[train] and data[test] to access the data rows. Both are full rows.
         evaluate_all(data[train], data[test])
 
@@ -182,12 +186,13 @@ def print_results():
     preds: List[List[int]] = []
     prbs: List[List[float]] = []
 
+    data_name = "heuristic"
+
     for clf in classifiers:
         model_name = type(clf).__name__
-        for data_name in ["heuristic", "touchcore", "heuristicAndTouchcore"]:
-            cols.append(f"{model_name}_{data_name}")
-            preds.append(output[model_name][data_name]["predicted"])
-            prbs.append(probas[model_name][data_name])
+        cols.append(f"{model_name}_{data_name}")
+        preds.append(output[model_name][data_name]["predicted"])
+        prbs.append(probas[model_name][data_name])
 
     print(",".join(cols))
 
@@ -195,29 +200,28 @@ def print_results():
         for v in p:
             print(f"{'{:1.0f}'.format(v)},", end="")
         print()
-    
+
     for clf in classifiers:
         model_name = type(clf).__name__
-        for data_name in ["heuristic", "touchcore", "heuristicAndTouchcore"]:
-            n = f"{model_name}_{data_name}"
-            pred = np.array(probas[model_name][data_name])
+        n = f"{model_name}_{data_name}"
+        pred = np.array(probas[model_name][data_name])
 
-            pred_ = pred
-            if BINARY_CLASSIFY:
-                pred_ = np.transpose(pred)[1]
+        pred_ = pred
+        if BINARY_CLASSIFY:
+            pred_ = np.transpose(pred)[1]
 
-            auc = roc_auc_score(np.array(exp), pred_, multi_class='ovr')
-            if n == "LogisticRegression_heuristic":
-                sss.append(np.array(exp))
-                sss.append(pred)
-                print(np.array(exp).shape, pred.shape)
-            aucs[n] = auc
-            #print(f"AUC of {n}: {auc}")
-            print(make_confusion_matrix(n, exp, output[model_name][data_name]["predicted"], auc, LABELS), "\n")
-            # print(n, type(exp), type(pred))
-            # print(n, len(exp), pred.shape)
-            # exit()
-            save_auc(n, exp, pred)
+        auc = roc_auc_score(np.array(exp), pred_, multi_class='ovr')
+        if n == "LogisticRegression_heuristic":
+            sss.append(np.array(exp))
+            sss.append(pred)
+            print(np.array(exp).shape, pred.shape)
+        aucs[n] = auc
+        #print(f"AUC of {n}: {auc}")
+        print(make_confusion_matrix(n, exp, output[model_name][data_name]["predicted"], auc, LABELS), "\n")
+        # print(n, type(exp), type(pred))
+        # print(n, len(exp), pred.shape)
+        # exit()
+        save_auc(n, exp, pred)
 
     # 0 LogisticRegression(C=1e5, max_iter=2000),
     # 1 GaussianNB(var_smoothing=0.1),
@@ -284,6 +288,7 @@ def debug():
 
 
 if __name__ == "__main__":
+    data = get_data_from_csv()  # labeled submissions
     k_fold()
     print_results()
     #print_importances()
@@ -292,6 +297,6 @@ if __name__ == "__main__":
         if v > max_auc:
             max_auc = v
         print(f"{'{:2.2f}'.format(100*v)} {k}")
-    
+
     print(f"Best AUC: {'{:2.2f}'.format(100*max_auc)}")
     #print(sss)

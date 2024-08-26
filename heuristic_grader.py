@@ -121,7 +121,7 @@ def get_probable_declared_attributes(submission: str) -> List[str]:
             for word in words:
                 if word not in classes and word not in BASIC_TYPES and word != "enum":
                     result.add(word)
-    
+
     return list(result)
 
 
@@ -214,7 +214,7 @@ def get_n_expected_attributes(submission: str, expected_attributes: List[str]) -
     frequent_extra_attributes.update(probable_declared_attributes)
 
     return min(result, len(expected_attributes))
-    
+
 
 def grade_submission(submission: Tuple[str, str], marking_scheme: Dict):
     name, text = submission
@@ -227,7 +227,7 @@ def grade_submission(submission: Tuple[str, str], marking_scheme: Dict):
     max_assoc = marking_scheme["nAssoc"]
 
     file_mapping = int(name.replace(".ump", ""))  # FILE_MAPPINGS[name]
-    
+
     n_exp_cls = get_n_expected_classes(text, expected_classes, max_exp_classes, show_unmatched=False)
     n_exp_attr = get_n_expected_attributes(text, expected_attributes)
     n_assoc = get_n_assoc(text, max_assoc)
@@ -246,7 +246,7 @@ def grade_all_using_heuristic(marking_scheme_file: str, submission_path: str=Non
 
     submissions = get_all_submissions(submission_path)
     IDEAL_ASSOC_MULTS = get_association_multiplicities(submissions["0.ump"], bidirectional=True)
-    
+
     for s in submissions.items():
         result.append(grade_submission(s, marking_scheme))
 
@@ -276,4 +276,4 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 3 and "showextras" in sys.argv[3].lower():
         show_most_frequent(frequent_extra_classes, FREQ_THRESH)
-        show_most_frequent(frequent_extra_attributes, FREQ_THRESH)    
+        show_most_frequent(frequent_extra_attributes, FREQ_THRESH)
