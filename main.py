@@ -13,11 +13,6 @@ from predictor import classifiers, train_model
 app = FastAPI()
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "world"}
-
-
 @app.post("/gradeSubmissions")
 def perform_grading(grading_request: GradingRequest):
     for submission in grading_request.submissions:
@@ -25,17 +20,6 @@ def perform_grading(grading_request: GradingRequest):
     grading_request.mod_solution = clean_diagram(grading_request.mod_solution)
 
     heuristic_results = grade_all_using_heuristic(grading_request.marking_scheme, grading_request.submissions, grading_request.mod_solution, grading_request.max_points)
-
-    '''
-    classifiers = [
-        LogisticRegression(C=1e5, max_iter=2000),
-        GaussianNB(var_smoothing=0.1),
-        RandomForestClassifier(),
-        # Also gives same results for 3, 5, 7, 12
-        KNeighborsClassifier(n_neighbors=2),
-        DecisionTreeClassifier()
-    ]
-    '''
 
     models = train_models(classifiers, heuristic_results)
     grading_results = ml_grading(models, heuristic_results)
@@ -63,11 +47,11 @@ def grade_all_using_heuristic(marking_scheme: MarkingScheme, submissions: List[S
     print(IDEAL_ASSOC_MULTS)
 
     for index, submission in enumerate(submissions):
-        result.append({'id': submission.submissionId, 'heuristic': grade_submission((str(index+1), submission.model), marking_scheme), 'points': submission.points})
+        result.append({'submissionId': submission.submissionId, 'submissionEntryId': submission.submissionEntryId, 'heuristic': grade_submission((str(index+1), submission.model), marking_scheme), 'points': submission.points})
 
     result.sort(key=lambda x: x['heuristic'][0])
-    result.insert(0, {'id': None, 'heuristic': grade_submission((str(0), model_solution), marking_scheme), 'points': max_points})
-    result.insert(0, {'id': None, 'heuristic': [-1, 0, 0, 0, 0], 'points': 0})
+    result.insert(0, {'submissionId': None, 'submissionEntryId': None, 'heuristic': grade_submission((str(0), model_solution), marking_scheme), 'points': max_points})
+    result.insert(0, {'submissionId': None, 'submissionEntryId': None, 'heuristic': [-1, 0, 0, 0, 0], 'points': 0})
 
     for r in result:
         print(",".join(map(str, r['heuristic'])))
@@ -93,7 +77,7 @@ def ml_grading(models, heuristic_results):
     results_by_model = [predict_grades(model, input_data) for model in models]
     results_by_submission = np.rot90(results_by_model, 3)
 
-    return [{'id': dataset['id'], 'model_results': results_by_submission[index].tolist()} for index, dataset in enumerate(heuristic_results)]
+    return [{'submissionId': dataset['submissionId'], 'submissionEntryId': dataset['submissionEntryId'], 'model_results': results_by_submission[index].tolist()} for index, dataset in enumerate(heuristic_results)]
 
 def predict_grades(model, input_data):
     return model.predict(input_data)
