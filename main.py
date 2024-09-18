@@ -46,11 +46,13 @@ def grade_all_using_heuristic(marking_scheme: MarkingScheme, submissions: List[S
     IDEAL_ASSOC_MULTS = get_association_multiplicities(model_solution, bidirectional=True)
     print(IDEAL_ASSOC_MULTS)
 
+    ideal_grades = grade_submission((str(0), model_solution), marking_scheme)
+
     for index, submission in enumerate(submissions):
-        result.append({'submissionId': submission.submissionId, 'submissionEntryId': submission.submissionEntryId, 'heuristic': grade_submission((str(index+1), submission.model), marking_scheme), 'points': submission.points})
+        result.append({'submissionId': submission.submissionId, 'submissionEntryId': submission.submissionEntryId, 'heuristic': normalize_grading(grade_submission((str(index+1), submission.model), marking_scheme), ideal_grades), 'points': submission.points})
 
     result.sort(key=lambda x: x['heuristic'][0])
-    result.insert(0, {'submissionId': None, 'submissionEntryId': None, 'heuristic': grade_submission((str(0), model_solution), marking_scheme), 'points': max_points})
+    result.insert(0, {'submissionId': None, 'submissionEntryId': None, 'heuristic': normalize_grading(ideal_grades, ideal_grades), 'points': max_points})
     result.insert(0, {'submissionId': None, 'submissionEntryId': None, 'heuristic': [-1, 0, 0, 0, 0], 'points': 0})
 
     for r in result:
@@ -84,3 +86,9 @@ def predict_grades(model, input_data):
 
 def get_heuristic_values(dataset):
     return dataset['heuristic'][1:4]
+
+def normalize_grading(grades, ideal_grades):
+    return [(norm(*tup) if (i > 0) else tup[0]) for i, tup in enumerate(zip(grades, ideal_grades))]
+
+def norm(val, max):
+    return (val / max) if (max > 0) else 0.0
